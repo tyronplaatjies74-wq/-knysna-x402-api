@@ -1,8 +1,11 @@
 const express = require('express');
+const fs = require('fs');
 const app = express();
 app.use(express.urlencoded({extended:true}));
 app.use(express.json());
 const ADMIN_PASSWORD = "Knysna2026!";
+
+// AUTO-LOAD from file if exists
 let houses = [
   {id:1, name:"Seaside Haven", location:"Leisure Isle", guests:4, beds:2, basePrice:850, rating:4.8, image:"🏖️", link:"#", desc:"Stunning lagoon views, 2 min walk to beach"},
   {id:2, name:"Lagoon Lodge", location:"Knysna Lagoon", guests:6, beds:3, basePrice:1200, rating:4.6, image:"🏞️", link:"#", desc:"Perfect for families, braai area & lagoon access"},
@@ -11,6 +14,15 @@ let houses = [
   {id:5, name:"Thesen Island", location:"Thesen Island", guests:3, beds:2, basePrice:1350, rating:4.9, image:"🏝️", link:"#", desc:"Luxury island living"},
   {id:6, name:"Brenton on Sea", location:"Brenton on Sea", guests:2, beds:1, basePrice:900, rating:4.5, image:"🌊", link:"#", desc:"Beachfront bliss"}
 ];
+
+if (fs.existsSync('houses.json')) {
+  try { houses = JSON.parse(fs.readFileSync('houses.json','utf8')); console.log("✅ Auto-loaded", houses.length, "houses"); } catch(e){}
+}
+
+function saveHouses(){
+  try { fs.writeFileSync('houses.json', JSON.stringify(houses, null, 2)); console.log("💾 Auto-saved"); } catch(e){ console.log("Save failed", e); }
+}
+
 function getPrice(h){let p=h.basePrice;let m=new Date().getMonth()+1;let d=new Date().getDay();if(m==12||m==1)p*=1.4;else if(m>=5&&m<=8)p*=0.85;if(d==5||d==6)p*=1.25;return Math.round(p);}
 
 app.get('/', (req,res)=>{
@@ -36,7 +48,6 @@ app.get('/', (req,res)=>{
   html+=`</body></html>`; res.send(html);
 });
 
-// EXPORT BACKUP - like Wellington
 app.get('/export', (req,res)=>{
   res.setHeader('Content-disposition','attachment; filename=knysna-backup.json');
   res.setHeader('Content-type','application/json');
@@ -50,8 +61,9 @@ app.get('/admin',(req,res)=>{
 app.post('/admin',(req,res)=>{
   if(req.body.password!==ADMIN_PASSWORD) return res.send("Wrong - <a href='/admin'>Try again</a>");
   let html=`<html><head><meta name="viewport" content="width=device-width"></head><body style="font-family:sans-serif;padding:15px">
-  <h2>🏡 Manage BnBs - BACKUP SAVED</h2><a href="/">View Public Site</a> | <a href="/export" style="background:#0a7;color:white;padding:8px 12px;border-radius:6px;text-decoration:none">📥 EXPORT Backup</a><br><br>
-  <div style="background:#fff3cd;padding:12px;border-radius:8px;border:2px solid orange"><b>RESTORE Backup:</b><br><input type="file" id="fileInput" accept=".json"><button onclick="doImport()" style="background:orange;padding:8px 12px;border:none;border-radius:6px;margin-top:5px;font-weight:bold">IMPORT RESTORE</button></div>
+  <h2>🏡 Manage BnBs - AUTO-SAVE ON</h2><a href="/">View Public Site</a> | <a href="/export" style="background:#0a7;color:white;padding:8px 12px;border-radius:6px;text-decoration:none">📥 EXPORT Backup</a><br><br>
+  <div style="background:#d4edda;padding:10px;border-radius:8px">✅ Auto-save active - houses saved to file automatically!</div><br>
+  <div style="background:#fff3cd;padding:12px;border-radius:8px;border:2px solid orange"><b>RESTORE Backup (only if deploy wipes):</b><br><input type="file" id="fileInput" accept=".json"><button onclick="doImport()" style="background:orange;padding:8px 12px;border:none;border-radius:6px;margin-top:5px;font-weight:bold">IMPORT RESTORE</button></div>
   <script>
   async function doImport(){
     const file=document.getElementById('fileInput').files[0];
@@ -81,11 +93,11 @@ app.post('/admin',(req,res)=>{
 
 app.post('/import',(req,res)=>{
   if(req.body.password!==ADMIN_PASSWORD) return res.status(403).send("Nope");
-  if(Array.isArray(req.body.houses)){ houses=req.body.houses; return res.send("OK");}
+  if(Array.isArray(req.body.houses)){ houses=req.body.houses; saveHouses(); return res.send("OK");}
   res.status(400).send("Bad data");
 });
 
-app.post('/update',(req,res)=>{if(req.body.password!==ADMIN_PASSWORD)return res.send("Nope");const h=houses.find(x=>x.id==req.body.id);if(h)h.basePrice=parseInt(req.body.basePrice);res.redirect('/admin');});
-app.post('/add',(req,res)=>{if(req.body.password!==ADMIN_PASSWORD)return res.send("Nope");let newId=houses.length>0?Math.max(...houses.map(x=>x.id))+1:1;houses.push({id:newId,name:req.body.name,location:req.body.location,guests:parseInt(req.body.guests),beds:parseInt(req.body.beds),basePrice:parseInt(req.body.basePrice),rating:4.8,image:req.body.image||"🏡",link:req.body.link||"#",desc:req.body.desc||""});res.redirect('/admin');});
-app.post('/delete',(req,res)=>{if(req.body.password!==ADMIN_PASSWORD)return res.send("Nope");houses=houses.filter(x=>x.id!=req.body.id);res.redirect('/admin');});
+app.post('/update',(req,res)=>{if(req.body.password!==ADMIN_PASSWORD)return res.send("Nope");const h=houses.find(x=>x.id==req.body.id);if(h){h.basePrice=parseInt(req.body.basePrice); saveHouses();} res.redirect('/admin');});
+app.post('/add',(req,res)=>{if(req.body.password!==ADMIN_PASSWORD)return res.send("Nope");let newId=houses.length>0?Math.max(...houses.map(x=>x.id))+1:1;houses.push({id:newId,name:req.body.name,location:req.body.location,guests:parseInt(req.body.guests),beds:parseInt(req.body.beds),basePrice:parseInt(req.body.basePrice),rating:4.8,image:req.body.image||"🏡",link:req.body.link||"#",desc:req.body.desc||""}); saveHouses(); res.redirect('/admin');});
+app.post('/delete',(req,res)=>{if(req.body.password!==ADMIN_PASSWORD)return res.send("Nope");houses=houses.filter(x=>x.id!=req.body.id); saveHouses(); res.redirect('/admin');});
 app.listen(process.env.PORT||10000);
