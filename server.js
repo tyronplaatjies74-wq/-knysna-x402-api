@@ -1,51 +1,51 @@
 const express = require('express');
 const app = express();
-app.use(express.json());
+app.use(express.urlencoded({extended:true}));
 
-let bnbData = [
-  {name:"Seaside Haven", price:850, area:"Leisure Isle", link:"https://www.booking.com/hotel/za/seaside-haven-knysna.html", rating:"4.8", guests:"2 guests, 1 bed, Free WiFi"},
-  {name:"Lagoon Lodge", price:1200, area:"Knysna Lagoon", link:"https://www.airbnb.com/s/Knysna/homes", rating:"4.6", guests:"4 guests, 2 beds, Pool, Parking"},
-  {name:"Forest Cottage", price:950, area:"Knysna Forest", link:"https://www.lekkeslaap.co.za/akkommodasie/knysna", rating:"4.9", guests:"3 guests, 1 bed, Pet Friendly"},
-  {name:"Heads View Guesthouse", price:1100, area:"The Heads", link:"https://www.booking.com/city/za/knysna.html", rating:"4.7", guests:"2 guests, Lagoon View"},
-  {name:"Thesen Island Hideaway", price:1350, area:"Thesen Island", link:"https://www.airbnb.com/knysna-south-africa/stays", rating:"4.9", guests:"5 guests, 3 beds, Luxury"},
-  {name:"Brenton on Sea BnB", price:900, area:"Brenton on Sea", link:"https://www.lekkeslaap.co.za/akkommodasie/brenton-on-sea", rating:"4.5", guests:"2 guests, Beach Access"}
+const ADMIN_PASSWORD = "Knysna2026!"; // CHANGE THIS TO YOUR SECRET
+
+let houses = [
+  {id:1, name:"Seaside Haven - Leisure Isle", location:"Leisure Isle", basePrice:850},
+  {id:2, name:"Lagoon Lodge", location:"Lagoon", basePrice:1200},
+  {id:3, name:"Forest Cottage", location:"Forest", basePrice:950},
+  {id:4, name:"Heads View", location:"The Heads", basePrice:1100},
+  {id:5, name:"Thesen Island", location:"Thesen Island", basePrice:1350},
+  {id:6, name:"Brenton on Sea", location:"Brenton", basePrice:900}
 ];
 
-const tideData = {
-  date: "2026-10-25",
-  location: "Knysna Lagoon, Western Cape",
-  tides: [{type:"High", time:"06:15", height:"1.8m"},{type:"Low", time:"12:30", height:"0.4m"},{type:"High", time:"18:45", height:"1.9m"}],
-  bestKayakTime: "Morning 07:00-10:00 - calm lagoon",
-  knysnaHeadsWarning: "Check wind - avoid Heads at outgoing tide",
-  lagoonStatus: "Open - safe for kayaks"
-};
+function getPrice(h){
+  let p=h.basePrice; let d=new Date(); let m=d.getMonth()+1; let day=d.getDay();
+  if(m==12||m==1) p*=1.4; else if(m>=5&&m<=8) p*=0.85;
+  if(day==5||day==6) p*=1.25;
+  return Math.round(p);
+}
 
+// PUBLIC - NO ADMIN BUTTON
 app.get('/', (req,res)=>{
-  let html = `<html><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>
-  body{font-family:Arial;padding:15px;background:#f0f9ff}
-  .header{background:linear-gradient(135deg,#0a74da,#00b4d8);color:#fff;padding:20px;text-align:center;border-radius:16px}
-  .card{background:#fff;border-radius:12px;padding:15px;margin:12px 0;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-  .btn{background:#0a74da;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;display:inline-block;font-weight:bold}
-  .tide{background:#e0f2fe;padding:12px;border-radius:10px;margin:15px 0;border:1px solid #0a74da}
-  </style></head><body>
-  <div class="header"><h2>🏖️ Knysna BnB Oracle</h2><p style="background:rgba(255,255,255,0.9);color:#0a74da;display:inline-block;padding:6px 14px;border-radius:20px;font-weight:bold">API PAID R2/call • Website FREE</p><p>Humans FREE • AIs / Bots PAY at /prices</p></div>
-  <div class="tide"><h3>🌊 Today Tides - ${tideData.location}</h3><p>${tideData.tides.map(t=>t.type+' '+t.time+' ('+t.height+')').join(' | ')}</p><p><b>Kayak:</b> ${tideData.bestKayakTime}</p><p><b>Heads:</b> ${tideData.knysnaHeadsWarning}</p></div>
-  <h3>Featured Guesthouses (6)</h3>`;
-  bnbData.forEach(b=>{
-    html+=`<div class="card"><b>${b.name}</b> - ${b.area}<br>${b.guests}<br>R${b.price}/night - ⭐${b.rating}<br><br><a class="btn" href="${b.link}" target="_blank">🔗 BOOK / INFO</a></div>`;
-  });
-  html+=`</body></html>`;
+  let html=`<h2>🏡 Knysna BnB Oracle</h2>`;
+  houses.forEach(h=>{html+=`<div style="border:1px solid #ccc;padding:10px;margin:10px">${h.name} - R${getPrice(h)}/night <small>(base R${h.basePrice})</small></div>`;});
   res.send(html);
 });
 
-app.get('/prices', (req,res)=>{
-  if(!req.query.payment){
-    return res.status(402).json({error:"402 Payment Required", price:"R2 USDC on Base", payTo:process.env.PAYMENT_ADDRESS||"Set PAYMENT_ADDRESS env", how:"Add ?payment=paid after payment", preview: bnbData.slice(0,2)});
-  }
-  res.json({bnb:bnbData, tides:tideData, source:"Knysna BnB Oracle - BLUE Beach Theme"});
+// SECRET ADMIN - ONLY YOU KNOW /admin
+app.get('/admin',(req,res)=>{
+  res.send(`<form method="POST" action="/admin"><input type="password" name="password" placeholder="Password"><button>Login</button></form>`);
 });
 
-app.get('/tides', (req,res)=>{res.json(tideData)});
+app.post('/admin',(req,res)=>{
+  if(req.body.password!==ADMIN_PASSWORD) return res.send("Wrong password");
+  let html=`<h2>💰 Update Prices Only</h2><p>Only you can see this</p>`;
+  houses.forEach(h=>{
+    html+=`<form method="POST" action="/update" style="margin:10px;padding:10px;border:1px solid #ddd">${h.name}<br>Base Price: R<input type="number" name="basePrice" value="${h.basePrice}" style="width:80px"> → Customer sees R${getPrice(h)}<br><input type="hidden" name="id" value="${h.id}"><input type="hidden" name="password" value="${ADMIN_PASSWORD}"><button>💾 Save Price</button></form>`;
+  });
+  res.send(html);
+});
 
-const PORT = process.env.PORT||10000;
-app.listen(PORT, ()=>console.log("Knysna Blue LIVE on "+PORT));
+app.post('/update',(req,res)=>{
+  if(req.body.password!==ADMIN_PASSWORD) return res.send("Nope");
+  const h=houses.find(x=>x.id==req.body.id);
+  if(h) h.basePrice=parseInt(req.body.basePrice);
+  res.redirect('/admin');
+});
+
+app.listen(process.env.PORT||10000);
