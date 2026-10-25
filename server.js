@@ -2,61 +2,34 @@ const express = require('express');
 const app = express();
 app.use(express.urlencoded({extended:true}));
 app.use(express.json());
-
 const ADMIN_PASSWORD = "Knysna2026!";
-
 let houses = [
-  {id:1, name:"Seaside Haven - Leisure Isle", location:"Leisure Isle", guests:4, beds:2, basePrice:850, rating:4.8, image:"🏖️", link:"https://www.booking.com", desc:"Stunning lagoon views, 2 min walk to beach"},
-  {id:2, name:"Lagoon Lodge - Knysna Lagoon", location:"Knysna Lagoon", guests:6, beds:3, basePrice:1200, rating:4.6, image:"🏞️", link:"https://www.airbnb.co.za", desc:"Perfect for families, braai area & lagoon access"},
-  {id:3, name:"Forest Cottage", location:"Knysna Forest", guests:2, beds:1, basePrice:950, rating:4.9, image:"🌲", link:"#", desc:"Romantic forest escape, birds & quiet"},
-  {id:4, name:"Heads View Guesthouse", location:"The Heads", guests:4, beds:2, basePrice:1100, rating:4.7, image:"🏔️", link:"#", desc:"Iconic Heads view, sunrise magic"},
-  {id:5, name:"Thesen Island Hideaway", location:"Thesen Island", guests:3, beds:2, basePrice:1350, rating:4.9, image:"🏝️", link:"#", desc:"Luxury on the water, private jetty"},
-  {id:6, name:"Brenton on Sea BnB", location:"Brenton on Sea", guests:2, beds:1, basePrice:900, rating:4.5, image:"🌊", link:"#", desc:"Beachfront, whale watching season"}
+  {id:1, name:"Seaside Haven", location:"Leisure Isle", guests:4, beds:2, basePrice:850, rating:4.8, image:"🏖️", link:"#", desc:"Lagoon views"},
+  {id:2, name:"Lagoon Lodge", location:"Knysna Lagoon", guests:6, beds:3, basePrice:1200, rating:4.6, image:"🏞️", link:"#", desc:"Families"},
+  {id:3, name:"Forest Cottage", location:"Knysna Forest", guests:2, beds:1, basePrice:950, rating:4.9, image:"🌲", link:"#", desc:"Forest escape"},
+  {id:4, name:"Heads View", location:"The Heads", guests:4, beds:2, basePrice:1100, rating:4.7, image:"🏔️", link:"#", desc:"Heads view"},
+  {id:5, name:"Thesen Island", location:"Thesen Island", guests:3, beds:2, basePrice:1350, rating:4.9, image:"🏝️", link:"#", desc:"Luxury"},
+  {id:6, name:"Brenton on Sea", location:"Brenton on Sea", guests:2, beds:1, basePrice:900, rating:4.5, image:"🌊", link:"#", desc:"Beachfront"}
 ];
-
 function getPrice(h){
   let p=h.basePrice; let d=new Date(); let m=d.getMonth()+1; let day=d.getDay();
   if(m==12||m==1) p*=1.4; else if(m>=5&&m<=8) p*=0.85;
   if(day==5||day==6) p*=1.25;
   return Math.round(p);
 }
-
-// PUBLIC - BEAUTIFUL + NO ADMIN BUTTON
 app.get('/', (req,res)=>{
   let html=`<html><head><meta name="viewport" content="width=device-width"><style>
   body{font-family:sans-serif;padding:15px;background:#f0f8ff;margin:0}
-  .header{background:white;padding:15px;border-radius:12px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-  .card{background:white;border-radius:12px;padding:15px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+  .header{background:white;padding:15px;border-radius:12px;margin-bottom:15px}
+  .card{background:white;border-radius:12px;padding:15px;margin-bottom:15px}
   .price{font-weight:bold;color:#0a7;font-size:18px}
-  button{background:#007bff;color:white;padding:10px 20px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;width:100%;margin-top:10px}
+  button{background:#007bff;color:white;padding:10px;border:none;border-radius:8px;width:100%;margin-top:10px}
   .badge{background:#e3f2fd;padding:4px 8px;border-radius:12px;font-size:12px}
   .tide{background:#fff3cd;padding:10px;border-radius:8px;margin:10px 0}
   </style></head><body>
-  <div class="header"><h2 style="margin:0">🏡 Knysna BnB Oracle</h2><p style="margin:5px 0">API PAID R2/call • Website FREE • Prices auto-adjust</p>
-  <div class="tide">🌊 Tides Today: High 06:15 (1.8m) | Low 12:30 (0.4m) | High 18:45 (1.6m)<br>⚠️ Kayak Warning: Wind 15kt | Heads: Moderate swell</div></div>`;
-  
+  <div class="header"><h2>🏡 Knysna BnB Oracle</h2><div class="tide">🌊 Tides: High 06:15 | Low 12:30</div></div>`;
   houses.forEach(h=>{
-    html+=`<div class="card"><div style="font-size:40px">${h.image}</div><b style="font-size:18px">${h.name}</b><br><span class="badge">📍 ${h.location}</span> <span class="badge">👥 ${h.guests} Guests</span> <span class="badge">🛏️ ${h.beds} beds</span> <span class="badge">⭐ ${h.rating}</span><br><p style="color:#666;font-size:13px;margin:8px 0">${h.desc}</p><span class="price">R${getPrice(h)}/night</span> <small style="color:#888">(Base R${h.basePrice})</small><br><a href="${h.link}" target="_blank"><button>🔗 BOOK / INFO ON BOOKING.COM</button></a></div>`;
+    html+=`<div class="card"><div style="font-size:40px">${h.image}</div><b>${h.name}</b><br><span class="badge">${h.location}</span> <span class="price">R${getPrice(h)}/night</span><br><a href="${h.link}" target="_blank"><button>🔗 BOOK</button></a></div>`;
   });
-  html+=`<p style="text-align:center;color:#888;font-size:12px">Prices auto-calculate: Dec/Jan +40%, May-Aug -15%, Fri/Sat +25%</p></body></html>`;
-  res.send(html);
+  html+=`</body></html>`; res.send(html);
 });
-
-// SECRET ADMIN - FULL CONTROL
-app.get('/admin',(req,res)=>{
-  res.send(`<html><body style="font-family:sans-serif;padding:20px"><h2>🔐 Admin</h2><form method="POST" action="/admin"><input type="password" name="password" placeholder="Password"><button>Login</button></form></body></html>`);
-});
-app.post('/admin',(req,res)=>{
-  if(req.body.password!==ADMIN_PASSWORD) return res.send("Wrong password");
-  let html=`<html><body style="font-family:sans-serif;padding:15px"><h2>🏡 Manage BnBs</h2><a href="/">View Public Site</a><br><br><h3>➕ Add New BnB</h3><form method="POST" action="/add" style="background:#e8f5e9;padding:15px;border-radius:8px">
-  <input type="hidden" name="password" value="${ADMIN_PASSWORD}">
-  Name: <input name="name" required style="width:100%;margin:5px 0"><br>
-  Location: <input name="location" required style="width:100%;margin:5px 0"><br>
-  Guests: <input type="number" name="guests" value="4" style="width:60px"> Beds: <input type="number" name="beds" value="2" style="width:60px"><br>
-  Base Price: R<input type="number" name="basePrice" value="1000" style="width:80px"><br>
-  Emoji: <input name="image" value="🏡" style="width:60px"> Link: <input name="link" value="#" style="width:200px"><br>
-  Desc: <input name="desc" value="Lovely place" style="width:100%;margin:5px 0"><br>
-  <button style="background:blue;color:white;padding:8px 15px;border:none;border-radius:6px;margin-top:10px">➕ ADD BNB</button></form><br><hr><h3>💰 Update / Delete</h3>`;
-  houses.forEach(h=>{
-    html+=`<div style="border:1px solid #ddd;padding:12px;margin:8px 0;border-radius:8px;background:#f9f9f9"><b>${h.name}</b> - ${h.location}<br>Base: R<input type="number" id="bp${h.id}" value="${h.basePrice}" style="width:80px"> → Customer sees R${getPrice(h)}/night<br>
-    <form method="POST" action="/update" style="display:inline"><input type="hidden" name="id" value="${h.id}"><input type="hidden" name="password" value="${ADMIN_PASSWORD}"><input type="hidden" name="basePrice" id="hidden${h.id}" value="${h.basePrice}"><button onclick="document.getElementById('hidden${h.id}').value=document.getElementById('bp${h.id}').value" style="background:green;color:white;padding:6px 12px;border:none;border-radius:6px;margin-top:5px">💾 Save Price
