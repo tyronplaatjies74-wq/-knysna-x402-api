@@ -42,21 +42,21 @@ app.get('/', (req,res)=>{
   res.send(html);
 });
 
-// SECRET ADMIN - ONLY PRICE EDIT
+// SECRET ADMIN - FULL CONTROL
 app.get('/admin',(req,res)=>{
   res.send(`<html><body style="font-family:sans-serif;padding:20px"><h2>🔐 Admin</h2><form method="POST" action="/admin"><input type="password" name="password" placeholder="Password"><button>Login</button></form></body></html>`);
 });
 app.post('/admin',(req,res)=>{
   if(req.body.password!==ADMIN_PASSWORD) return res.send("Wrong password");
-  let html=`<html><body style="font-family:sans-serif;padding:15px"><h2>💰 Update Prices Only</h2><a href="/">View Public Site</a><br><br>`;
+  let html=`<html><body style="font-family:sans-serif;padding:15px"><h2>🏡 Manage BnBs</h2><a href="/">View Public Site</a><br><br><h3>➕ Add New BnB</h3><form method="POST" action="/add" style="background:#e8f5e9;padding:15px;border-radius:8px">
+  <input type="hidden" name="password" value="${ADMIN_PASSWORD}">
+  Name: <input name="name" required style="width:100%;margin:5px 0"><br>
+  Location: <input name="location" required style="width:100%;margin:5px 0"><br>
+  Guests: <input type="number" name="guests" value="4" style="width:60px"> Beds: <input type="number" name="beds" value="2" style="width:60px"><br>
+  Base Price: R<input type="number" name="basePrice" value="1000" style="width:80px"><br>
+  Emoji: <input name="image" value="🏡" style="width:60px"> Link: <input name="link" value="#" style="width:200px"><br>
+  Desc: <input name="desc" value="Lovely place" style="width:100%;margin:5px 0"><br>
+  <button style="background:blue;color:white;padding:8px 15px;border:none;border-radius:6px;margin-top:10px">➕ ADD BNB</button></form><br><hr><h3>💰 Update / Delete</h3>`;
   houses.forEach(h=>{
-    html+=`<div style="border:1px solid #ddd;padding:12px;margin:8px 0;border-radius:8px;background:#f9f9f9"><b>${h.name}</b> - ${h.location}<br>Base: R<input type="number" name="bp" id="bp${h.id}" value="${h.basePrice}" style="width:80px"> → Customer sees R${getPrice(h)}/night<br><form method="POST" action="/update" style="margin-top:8px"><input type="hidden" name="id" value="${h.id}"><input type="hidden" name="basePrice" id="hidden${h.id}" value="${h.basePrice}"><input type="hidden" name="password" value="${ADMIN_PASSWORD}"><button onclick="document.getElementById('hidden${h.id}').value=document.getElementById('bp${h.id}').value" style="background:green;color:white;padding:6px 12px;border:none;border-radius:6px">💾 Save</button></form></div>`;
-  });
-  html+=`</body></html>`; res.send(html);
-});
-app.post('/update',(req,res)=>{
-  if(req.body.password!==ADMIN_PASSWORD) return res.send("Nope");
-  const h=houses.find(x=>x.id==req.body.id); if(h) h.basePrice=parseInt(req.body.basePrice); res.redirect('/admin');
-});
-
-app.listen(process.env.PORT||10000);
+    html+=`<div style="border:1px solid #ddd;padding:12px;margin:8px 0;border-radius:8px;background:#f9f9f9"><b>${h.name}</b> - ${h.location}<br>Base: R<input type="number" id="bp${h.id}" value="${h.basePrice}" style="width:80px"> → Customer sees R${getPrice(h)}/night<br>
+    <form method="POST" action="/update" style="display:inline"><input type="hidden" name="id" value="${h.id}"><input type="hidden" name="password" value="${ADMIN_PASSWORD}"><input type="hidden" name="basePrice" id="hidden${h.id}" value="${h.basePrice}"><button onclick="document.getElementById('hidden${h.id}').value=document.getElementById('bp${h.id}').value" style="background:green;color:white;padding:6px 12px;border:none;border-radius:6px;margin-top:5px">💾 Save Price
